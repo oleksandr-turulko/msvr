@@ -30,7 +30,7 @@ function Model(name) {
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
 
-        gl.drawArrays(gl.LINE_STRIP, 0, this.count);
+        gl.drawArrays(gl.TRIANGLES, 0, this.count);
     }
 }
 
@@ -88,25 +88,45 @@ function draw() {
 
 function CreateSurfaceData() {
     let vertexList = [];
-    let x = 0;
-    let y = 0;
-
     let a = 2;
     let b = 2;
     let n = 1;
-    const getX = (u, v) => ((a + b * Math.sin(n * (u))) * Math.cos((u)) - v * Math.sin((u)))/4;
-    const getY = (u, v) => ((a + b * Math.sin(n * (u))) * Math.sin((u)) + v * Math.cos((u)))/4;
-    const getZ = (u) => (b * Math.cos(n * (u)))/4;
-    for (let u = 0; u <=  2*Math.PI; u += 0.001) {
-        for (let v = 0; v <= 2; v += 0.001) {
-            vertexList.push(getX(u,v), getY(u,v),getZ(u));
+
+    let u_min = 0;
+    let u_max = 2 * Math.PI;
+    let v_min = 0;
+    let v_max = 2;
+    let step_v = 0.1;
+    let step_u = 0.1;
+
+    const countX = (u, v) => ((a + b * Math.sin(n * u)) * Math.cos(u) - v * Math.sin(u)) / 4;
+    const countY = (u, v) => ((a + b * Math.sin(n * u)) * Math.sin(u) + v * Math.cos(u)) / 4;
+    const countZ = (u) => (b * Math.cos(n * u)) / 4;
+    const countVertex = (u, v) => [countX(u, v), countY(u, v), countZ(u)];
+
+    for (let u = u_min; u <= u_max; u += step_u) {
+        for (let v = v_min; v <= v_max; v += step_v) {
+            let vertex1 = countVertex(u, v);
+            let vertex2 = countVertex(u, v + step_v);
+            let vertex3 = countVertex(u + step_u, v);
+            let vertex4 = countVertex(u + step_u, v + step_v);
             
+            vertexList.push(...vertex1, ...vertex2, ...vertex3, ...vertex3, ...vertex2, ...vertex4);
         }
     }
+    for (let v = v_min; v <= v_max; v += step_v) {
+        for (let u = u_min; u <=  u_max; u += step_u) {
+            let vertex1 = countVertex(u, v);
+            let vertex2 = countVertex(u, v + 0.1);
+            let vertex3 = countVertex(u + 0.1, v);
+            let vertex4 = countVertex(u + 0.1, v + 0.1);
 
+            vertexList.push(...vertex1, ...vertex2, ...vertex3, ...vertex3, ...vertex2, ...vertex4);
+
+        }
+    }
     return vertexList;
 }
-
 
 /* Initialize the WebGL context. Called from init() */
 function initGL() {
