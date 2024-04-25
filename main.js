@@ -4,6 +4,9 @@ let gl;                         // The webgl context.
 let surface;                    // A surface model
 let shProgram;                  // A shader program
 let spaceball;                  // A SimpleRotator object that lets the user rotate the view by mouse.
+let camera;
+let conv = 50, eyes = 1, fov = 20, near = 1;
+let count_horisontal_steps = 0;
 
 function deg2rad(angle) {
     return angle * Math.PI / 180;
@@ -31,6 +34,17 @@ function Model(name) {
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
 
         gl.drawArrays(gl.TRIANGLES, 0, this.count);
+    }
+
+    this.DrawLines = function () {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
+        gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(shProgram.iAttribVertex);
+
+        let n = this.count / count_horisontal_steps
+        for (let i = 0; i < count_horisontal_steps; i++) {
+            gl.drawArrays(gl.LINE_STRIP, n * i, n);
+        }
     }
 }
 
@@ -63,7 +77,7 @@ function draw() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     /* Set the values of the projection transformation */
-    let projection = m4.perspective(Math.PI / 8, 1, 8, 12);
+    let projection = m4.orthographic(-2, 2, -2, 2, 0, 16);
 
     /* Get the view matrix from the SimpleRotator object.*/
     let modelView = spaceball.getViewMatrix();
@@ -80,10 +94,27 @@ function draw() {
 
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection);
 
-    /* Draw the six faces of a cube, with different colors. */
+    camera.ApplyLeftFrustum()
+    modelViewProjection = m4.multiply(camera.projection, m4.multiply(camera.modelView, matAccum1));
+    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection);
+    gl.colorMask(true, false, false, false);
     gl.uniform4fv(shProgram.iColor, [1, 1, 0, 1]);
-
     surface.Draw();
+    gl.uniform4fv(shProgram.iColor, [0, 0, 1, 1]);
+    surface.DrawLines();
+
+    gl.clear(gl.DEPTH_BUFFER_BIT)
+
+    camera.ApplyRightFrustum()
+    modelViewProjection = m4.multiply(camera.projection, m4.multiply(camera.modelView, matAccum1));
+    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection);
+    gl.colorMask(false, true, true, false);
+    gl.uniform4fv(shProgram.iColor, [1, 1, 0, 1]);
+    surface.Draw();
+    gl.uniform4fv(shProgram.iColor, [0, 0, 1, 1]);
+    surface.DrawLines();
+
+    gl.colorMask(true, true, true, true);
 }
 
 function CreateSurfaceData() {
@@ -112,6 +143,7 @@ function CreateSurfaceData() {
             let vertex4 = countVertex(u + step_u, v + step_v);
             
             vertexList.push(...vertex1, ...vertex2, ...vertex3, ...vertex3, ...vertex2, ...vertex4);
+            count_horisontal_steps++;
         }
     }
     for (let v = v_min; v <= v_max; v += step_v) {
@@ -122,7 +154,7 @@ function CreateSurfaceData() {
             let vertex4 = countVertex(u + 0.1, v + 0.1);
 
             vertexList.push(...vertex1, ...vertex2, ...vertex3, ...vertex3, ...vertex2, ...vertex4);
-
+            count_horisontal_steps++;
         }
     }
     return vertexList;
@@ -196,6 +228,13 @@ function init() {
         return;
     }
     try {
+        camera = new Camera(
+            conv,     // Convergence
+            eyes,       // Eye Separation
+            1,     // Aspect Ratio
+            fov,       // FOV along Y in degrees
+            near,       // Near Clipping Distance
+            20.0);   // Far Clipping Distance
         initGL();  // initialize the WebGL graphics context
     }
     catch (e) {
