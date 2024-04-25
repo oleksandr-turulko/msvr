@@ -5,7 +5,7 @@ let surface;                    // A surface model
 let shProgram;                  // A shader program
 let spaceball;                  // A SimpleRotator object that lets the user rotate the view by mouse.
 let camera;
-let conv = 50, eyes = 1, fov = 20, near = 1;
+let conv = 50, eyes = 1, fov = 20, near_clips = 1;
 let count_horisontal_steps = 0;
 
 function deg2rad(angle) {
@@ -215,6 +215,33 @@ function createProgram(gl, vShader, fShader) {
  */
 function init() {
     let canvas;
+
+    document.getElementById('conv').addEventListener("change", () => {
+        conv = parseFloat(document.getElementById('conv').value);
+        document.getElementById("conv_indicator").innerHTML  = conv;
+        camera.mConvergence = conv;
+        draw();
+    });
+    document.getElementById('eyes').addEventListener("change", () => {
+        eyes = parseFloat(document.getElementById('eyes').value);
+        document.getElementById("eyes_indicator").innerHTML = eyes;
+        camera.mEyeSeparation = eyes; 
+        draw();
+    });
+    document.getElementById('fov').addEventListener("change", () => {
+        fov = deg2rad(parseFloat(document.getElementById('fov').value));
+        document.getElementById("fov_indicator").innerHTML = (Math.round(fov*100)/100).toString();
+        camera.mFOV = fov;
+        draw();
+    });
+    document.getElementById('near_clips').addEventListener("change", () => {
+        near_clips = parseFloat(document.getElementById('near_clips').value);
+        document.getElementById("near_clips_indicator").innerHTML = near_clips;
+        camera.mNearClippingDistance = near_clips;
+        draw();
+    });
+
+
     try {
         canvas = document.getElementById("webglcanvas");
         gl = canvas.getContext("webgl");
@@ -233,9 +260,9 @@ function init() {
             eyes,       // Eye Separation
             1,     // Aspect Ratio
             fov,       // FOV along Y in degrees
-            near,       // Near Clipping Distance
-            20.0);   // Far Clipping Distance
-        initGL();  // initialize the WebGL graphics context
+            near_clips,       // Near Clipping Distance
+            30.0);   // Far Clipping Distance
+        initGL(); 
     }
     catch (e) {
         document.getElementById("canvas-holder").innerHTML =
