@@ -1,7 +1,0 @@
-{
-    "objectscript.conn": {
-        "server": "pdb",
-        "ns": "USER",
-        "active": true
-    }
-}
