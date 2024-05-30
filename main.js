@@ -190,7 +190,6 @@ function initGL() {
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
     shProgram.iColor = gl.getUniformLocation(prog, "color");
     shProgram.iT = gl.getUniformLocation(prog, "textured");
-
     surface = new Model('Surface');
     surface.BufferData(CreateSurfaceData(),);
     surface.TextureBufferData(CreateSurfaceData(),);
@@ -241,6 +240,7 @@ function createProgram(gl, vShader, fShader) {
 
 /* Initialization function that will be called when the page has loaded */
 function init() {
+    initAudio();
     webcamera = getWebCamera();
     let canvas;
 
