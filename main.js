@@ -2,6 +2,13 @@
 
 let gl; // The WebGL context.
 let surface; // A surface model
+let sphere;
+let sphereCoords = {
+    x: 0,
+    y: 0,
+    z: 0
+};
+let startTime = null;
 let shProgram; // A shader program
 let spaceball; // A SimpleRotator object that lets the user rotate the view by mouse.
 let camera;
@@ -100,9 +107,16 @@ function draw(animate = false) {
         );
     
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, m4.identity());
-    webcameraModel.DrawTextured();
-    gl.clear(gl.DEPTH_BUFFER_BIT);
+    webcameraModel.DrawTextured()
+    gl.clear(gl.DEPTH_BUFFER_BIT)
     gl.uniform1f(shProgram.iT, false);
+
+    
+    // Update sphere position
+    moveSphere();
+    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, m4.translation(...[sphereCoords.x, sphereCoords.y,sphereCoords.z]));
+    sphere.DrawTextured();
+    gl.clear(gl.DEPTH_BUFFER_BIT);
 
     // Draw surface model
     let modelViewProjection = m4.multiply(projection, matAccum1);
@@ -132,7 +146,9 @@ function draw(animate = false) {
     gl.colorMask(true, true, true, true);
 
     if (animate) {
-        window.requestAnimationFrame(() => draw(true));
+        window.requestAnimationFrame(() => {
+            draw(true);
+        });
     }
 }
 
@@ -178,6 +194,59 @@ function CreateSurfaceData() {
     return vertexList;
 }
 
+function CreateSphereData() {
+    let vertexList = [];
+  
+    let u = 0;
+    let t = 0;
+
+    let radius = 0.05;
+    const getSphereVertex = (long, lat) => {
+        return {
+            x: radius * Math.cos(long) * Math.sin(lat),
+            y: radius * Math.sin(long) * Math.sin(lat),
+            z: radius * Math.cos(lat)
+        };
+    };
+    while (u < Math.PI * 2) {
+        while (t < Math.PI) {
+            let v1 = getSphereVertex(u, t);
+            let v2 = getSphereVertex(u + 0.1, t);
+            let v3 = getSphereVertex(u, t + 0.1);
+            let v4 = getSphereVertex(u + 0.1, t + 0.1);
+            vertexList.push(v1.x, v1.y, v1.z);
+            vertexList.push(v2.x, v2.y, v2.z);
+            vertexList.push(v3.x, v3.y, v3.z);
+            vertexList.push(v3.x, v3.y, v3.z);
+            vertexList.push(v2.x, v2.y, v2.z);
+            vertexList.push(v4.x, v4.y, v4.z);
+            t += 0.1;
+        }
+        t = 0;
+        u += 0.1;
+    }
+    return vertexList;
+}
+
+function moveSphere() {
+    let radius = 1.0; 
+    if (startTime === null) {
+        startTime = performance.now();
+    }
+    let currentTime = performance.now();
+    let elapsedTime = (currentTime - startTime) / 1000; // Time in seconds
+
+    // Update sphere coordinates for circular motion
+    sphereCoords.x = radius * Math.cos(elapsedTime);
+    sphereCoords.y = radius * Math.sin(elapsedTime);
+    sphereCoords.z = 0.0; // Assuming the sphere moves in the XY plane
+
+    // Update the position of the sound panner to match the sphere's coordinates
+    if (panner) {
+        panner.setPosition(sphereCoords.x, sphereCoords.y, sphereCoords.z);
+    }
+}
+
 /* Initialize the WebGL context. Called from init() */
 function initGL() {
     let prog = createProgram(gl, vertexShaderSource, fragmentShaderSource);
@@ -193,6 +262,9 @@ function initGL() {
     surface = new Model('Surface');
     surface.BufferData(CreateSurfaceData(),);
     surface.TextureBufferData(CreateSurfaceData(),);
+    sphere = new Model('Sphere');
+    sphere.BufferData(CreateSphereData());
+    sphere.TextureBufferData(CreateSphereData());
     webcameraModel = new Model('Webcam');
     webcameraModel.BufferData([
         -1, -1, 0,

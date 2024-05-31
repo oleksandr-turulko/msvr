@@ -6,6 +6,7 @@ let context,
 
 function setupAudio() {
     audio = document.getElementById('audio');
+    audio.volume = 0.2;
 
     audio.addEventListener('play', () => {
         if (!context) {
@@ -23,16 +24,18 @@ function setupAudio() {
             biquadFilter.frequency.value = 100;
             context.resume();
         }
-    })
+    });
     audio.addEventListener('pause', () => {
-        console.log('pause');
         context.resume();
-    })
+    });
 }
 
 function initAudio() {
     setupAudio();
-    const peakingEnabled = document.getElementById('filterCheckbox');
+    let peakingEnabled = document.getElementById('filterCheckbox');
+    peakingEnabled.value = true;
+    peakingEnabled.value = document.getElementById('filterCheckbox').value;
+
     peakingEnabled.addEventListener('change', function() {
         if (peakingEnabled.checked) {
             panner.disconnect();
