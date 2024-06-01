@@ -237,14 +237,12 @@ function moveSphere() {
     let elapsedTime = (currentTime - startTime) / 1000; // Time in seconds
 
     // Update sphere coordinates for circular motion
-    sphereCoords.x = radius * Math.cos(elapsedTime);
-    sphereCoords.y = radius * Math.sin(elapsedTime);
-    sphereCoords.z = 0.0; // Assuming the sphere moves in the XY plane
-
+    sphereCoords.x = radius * Math.sin(elapsedTime);
+    sphereCoords.y = 0;
+    sphereCoords.z = radius * Math.cos(elapsedTime); // Assuming the sphere moves in the XY plane
     // Update the position of the sound panner to match the sphere's coordinates
-    if (panner) {
-        panner.setPosition(sphereCoords.x, sphereCoords.y, sphereCoords.z);
-    }
+    setPannerPosition(sphereCoords.x,sphereCoords.y,sphereCoords.z);
+    
 }
 
 /* Initialize the WebGL context. Called from init() */
